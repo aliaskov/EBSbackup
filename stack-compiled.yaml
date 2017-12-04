@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  BackupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 4 * * ? *)"
+      Handler: handler.lambda_handler
+      Runtime: python2.7
+      CodeUri: ./src
+      Role: !GetAtt Role.Arn
+      Environment:
+        Variables:
+          REGION: !Ref "AWS::Region"
+          DEFAULT_RETENTION: 30
+          AWS_ACCOUNT: !Ref "AWS::AccountId"
+          TZ: Europe/Berlin
+  Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "RolePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "logs:*"
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action:
+                  - "ec2:DescribeVolumes"
+                  - "ec2:DescribeSnapshots"
+                  - "ec2:CreateSnapshot"
+                  - "ec2:DeleteSnapshot"
+                  - "ec2:CreateTags"
+                  - "ec2:ModifySnapshotAttribute"
+                  - "ec2:ResetSnapshotAttribute"
+                Resource: "*"
